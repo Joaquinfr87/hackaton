@@ -55,3 +55,130 @@ Actualizar a **Tailwind CSS v4**, que es lo que shadcn/ui v2 espera.
 | `apps/frontend/package.json` | `tailwindcss` v4, `@tailwindcss/vite`, removidos `postcss` y `autoprefixer` |
 | `apps/frontend/tailwind.config.js` | Eliminado |
 | `apps/frontend/postcss.config.js` | Eliminado |
+
+## Error 2: Conflictos al mergear `feature/p1-frontend-base` con `dev`
+
+**Problema:**
+Al fusionar la rama `feature/p1-frontend-base` (Nicolás) en `dev` surgieron múltiples conflictos porque `feature/p1-shadcn-setup` (Jhoan/Joaquín) ya había modificado los mismos archivos.
+
+**Archivos en conflicto:**
+
+| Archivo | Conflicto | Resolución |
+|---|---|---|
+| `apps/frontend/package.json` | Dependencias diferentes (Radix vs Base UI, Tailwind v3 vs v4) | Combinar ambas: mantener Tailwind v4 + agregar Radix y react-router-dom |
+| `apps/frontend/src/App.tsx` | Demo de componentes (HEAD) vs routing completo (theirs) | Mantener routing de Nicolás |
+| `apps/frontend/src/index.css` | Tailwind v4 (HEAD) vs Tailwind v3 (theirs) | Mantener HEAD (Tailwind v4) |
+| `apps/frontend/src/components/ui/button.tsx` | Base UI (HEAD) vs Radix (theirs) | Mantener HEAD (Base UI, shadcn v2) |
+| `apps/frontend/src/components/ui/card.tsx` | Base UI (HEAD) vs Radix (theirs) | Mantener HEAD |
+| `apps/frontend/src/components/ui/dialog.tsx` | Base UI (HEAD) vs Radix (theirs) | Mantener HEAD |
+| `apps/frontend/src/components/ui/input.tsx` | Base UI (HEAD) vs Radix (theirs) | Mantener HEAD |
+| `apps/frontend/src/lib/utils.ts` | `cn()` function (HEAD) vs (theirs) | Mantener HEAD |
+| `apps/frontend/tailwind.config.js` | Eliminado en HEAD (Tailwind v4), modificado en theirs | Eliminar (Tailwind v4 no lo usa) |
+
+**Causa raíz:**
+Dos branches (`p1-shadcn-setup` y `p1-frontend-base`) trabajaron en paralelo sobre los mismos archivos del frontend con enfoques distintos:
+- `p1-shadcn-setup` usó shadcn/ui v2 con `@base-ui/react` y Tailwind v4
+- `p1-frontend-base` usó shadcn/ui v1 con `@radix-ui/react-*` y Tailwind v3
+
+**Solución:**
+1. Para cada conflicto decidir qué versión conservar según el estado actual del proyecto (Tailwind v4 + Base UI)
+2. Reinstalar dependencias faltantes después de resolver (`pnpm install`)
+3. Verificar que ambos proyectos compilen (`vite build` + `tsc --noEmit`)
+
+## Error 3: Módulos de backend no encontrados tras merge
+
+**Error:**
+```
+Cannot find module '@nestjs/jwt' or its corresponding type declarations.
+Cannot find module 'bcrypt' or its corresponding type declarations.
+```
+
+**Causa:**
+Las dependencias del P2.1 (auth module) se instalaron pero no quedaron registradas en `pnpm-lock.yaml` porque no se había hecho commit antes del merge.
+
+**Solución:**
+Re-ejecutar `pnpm --filter @hackaton/backend add` para cada dependencia faltante para que se actualice el lockfile.
+
+## Error 4: Conflictos al mergear `feature/p2-auth-pages` con `dev`
+
+**Problema:**
+Al fusionar `feature/p2-auth-pages` (Nicolás) en `dev` surgieron conflictos porque ambas ramas modificaron las mismas páginas de autenticación con enfoques distintos.
+
+**Archivos en conflicto:**
+
+| Archivo | HEAD (dev) | theirs (auth-pages) | Resolución |
+|---|---|---|---|
+| `apps/frontend/src/pages/auth/login.tsx` | Formulario simple con `useState` + `useAuth().login` | `AuthPage` unificada con Tabs (login + register), React Hook Form + Zod, `api()` directo | Mantener UI de Tabs + RHF/Zod, reemplazar `api()` por `useAuth()` |
+| `apps/frontend/src/pages/auth/register.tsx` | Formulario simple con `useState` + `useAuth().register` | Formulario RHF/Zod con `api()` directo | Mantener RHF/Zod, reemplazar `api()` por `useAuth()` |
+
+**Causa raíz:**
+- `dev` implementó P2.4 (`useAuth` hook con TanStack Query) directamente
+- `feature/p2-auth-pages` implementó P2.3 (login/register con RHF + Zod) usando `api()` directo y localStorage manual
+
+**Solución:**
+Para cada conflicto:
+1. Conservar la UI de `auth-pages` (Tabs, React Hook Form + Zod, validación)
+2. Reemplazar `api()` directo por `useAuth()` para usar TanStack Query como capa de estado
+3. Cambiar ruta de `/login` + `/register` a `/auth` unificada
+4. Instalar dependencias faltantes: `@radix-ui/react-tabs`
+5. Verificar build (`tsc --noEmit` + `vite build`)
+
+**Archivos adicionales añadidos por el merge:**
+
+| Archivo | Propósito |
+|---|---|
+| `apps/frontend/src/components/ui/tabs.tsx` | Componente Tabs de shadcn/ui (Radix) |
+| `apps/frontend/src/lib/api.ts` | Utilidad fetch para futuros módulos (incidents, etc.) |
+| `apps/frontend/src/hooks/useAuth.tsx` | AuthProvider + hook useAuth con TanStack Query |
+
+## Error 5: Módulo `@radix-ui/react-tabs` no encontrado tras merge
+
+**Error:**
+```
+src/components/ui/tabs.tsx(1,32): error TS2307: Cannot find module '@radix-ui/react-tabs' or its corresponding type declarations.
+```
+
+**Causa:**
+El componente `Tabs` de `feature/p2-auth-pages` usa `@radix-ui/react-tabs`, pero esa dependencia no se instaló en `dev` (que usa `@base-ui/react`). El merge automático agregó el archivo `tabs.tsx` pero la dependencia no estaba en `package.json`.
+
+**Solución:**
+```bash
+pnpm --filter @hackaton/frontend add @radix-ui/react-tabs
+```
+
+## Error 6: Parámetro `v` con tipo `any` implícito en login.tsx
+
+**Error:**
+```
+src/pages/auth/login.tsx(92,45): error TS7006: Parameter 'v' implicitly has an 'any' type.
+```
+
+**Causa:**
+El callback `onValueChange` del componente `Tabs` no tenía tipo explícito para su parámetro, y `tsconfig.json` tiene `strict: true` que prohíbe `any` implícitos.
+
+**Solución:**
+Agregar tipo explícito al parámetro:
+```tsx
+<Tabs value={tab} onValueChange={(v: string) => { setTab(v); setError(null); }}>
+```
+
+## Error 7: Guards de ruta redirigen a `/login` en lugar de `/auth`
+
+**Error:**
+```tsx
+// Protegían la ruta correctamente pero con redirect equivocado
+return <Navigate to="/login" replace />;
+```
+
+**Causa:**
+Tras el merge de `feature/p2-auth-pages`, las rutas de login/register se unificaron en `/auth`. Sin embargo, los guards (`ProtectedRoute`, `AdminRoute`, `ResponsableRoute`) creados en `feature/p2-auth-guard-frontend` mantenían la redirección a `/login` (ruta anterior).
+
+**Archivos afectados:**
+- `apps/frontend/src/components/auth/ProtectedRoute.tsx`
+- `apps/frontend/src/components/auth/AdminRoute.tsx`
+- `apps/frontend/src/components/auth/ResponsableRoute.tsx`
+
+**Solución:**
+Cambiar `to="/login"` por `to="/auth"` en los tres guards.
+
+**Lección:** Al unificar rutas, actualizar también todas las redirecciones que apuntaban a la ruta antigua.
