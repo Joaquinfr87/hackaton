@@ -98,3 +98,35 @@ Las dependencias del P2.1 (auth module) se instalaron pero no quedaron registrad
 
 **Solución:**
 Re-ejecutar `pnpm --filter @hackaton/backend add` para cada dependencia faltante para que se actualice el lockfile.
+
+## Error 4: Conflictos al mergear `feature/p2-auth-pages` con `dev`
+
+**Problema:**
+Al fusionar `feature/p2-auth-pages` (Nicolás) en `dev` surgieron conflictos porque ambas ramas modificaron las mismas páginas de autenticación con enfoques distintos.
+
+**Archivos en conflicto:**
+
+| Archivo | HEAD (dev) | theirs (auth-pages) | Resolución |
+|---|---|---|---|
+| `apps/frontend/src/pages/auth/login.tsx` | Formulario simple con `useState` + `useAuth().login` | `AuthPage` unificada con Tabs (login + register), React Hook Form + Zod, `api()` directo | Mantener UI de Tabs + RHF/Zod, reemplazar `api()` por `useAuth()` |
+| `apps/frontend/src/pages/auth/register.tsx` | Formulario simple con `useState` + `useAuth().register` | Formulario RHF/Zod con `api()` directo | Mantener RHF/Zod, reemplazar `api()` por `useAuth()` |
+
+**Causa raíz:**
+- `dev` implementó P2.4 (`useAuth` hook con TanStack Query) directamente
+- `feature/p2-auth-pages` implementó P2.3 (login/register con RHF + Zod) usando `api()` directo y localStorage manual
+
+**Solución:**
+Para cada conflicto:
+1. Conservar la UI de `auth-pages` (Tabs, React Hook Form + Zod, validación)
+2. Reemplazar `api()` directo por `useAuth()` para usar TanStack Query como capa de estado
+3. Cambiar ruta de `/login` + `/register` a `/auth` unificada
+4. Instalar dependencias faltantes: `@radix-ui/react-tabs`
+5. Verificar build (`tsc --noEmit` + `vite build`)
+
+**Archivos adicionales añadidos por el merge:**
+
+| Archivo | Propósito |
+|---|---|
+| `apps/frontend/src/components/ui/tabs.tsx` | Componente Tabs de shadcn/ui (Radix) |
+| `apps/frontend/src/lib/api.ts` | Utilidad fetch para futuros módulos (incidents, etc.) |
+| `apps/frontend/src/hooks/useAuth.tsx` | AuthProvider + hook useAuth con TanStack Query |
