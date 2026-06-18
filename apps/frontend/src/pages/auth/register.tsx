@@ -1,23 +1,56 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function RegisterPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const { register } = useAuth();
-  const navigate = useNavigate();
+const registerSchema = z
+  .object({
+    name: z
+      .string()
+      .min(2, "El nombre debe tener al menos 2 caracteres")
+      .max(100),
+    email: z.string().email("Correo electrónico inválido"),
+    phone: z
+      .string()
+      .optional()
+      .transform((val) => val?.trim() || undefined),
+    password: z
+      .string()
+      .min(6, "La contraseña debe tener al menos 6 caracteres")
+      .max(100),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmPassword"],
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+type RegisterForm = z.infer<typeof registerSchema>;
+
+export default function RegisterPage() {
+  const navigate = useNavigate();
+  const { register } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+
+  const {
+    register: formRegister,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema),
+  });
+
+  const onSubmit = async (data: RegisterForm) => {
+    setError(null);
     try {
-      await register({ name, email, password });
+      const { confirmPassword: _, ...payload } = data;
+      await register(payload);
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al registrarse");
@@ -28,48 +61,95 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Registrarse</CardTitle>
+          <CardTitle className="text-xl">Crear Cuenta</CardTitle>
           <CardDescription>
-            Cree una cuenta para acceder al sistema
+            Complete el formulario para registrarse en el sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {error && (
+              <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">Nombre</label>
+              <Label htmlFor="name">Nombre completo</Label>
               <Input
+                id="name"
                 placeholder="Juan Pérez"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+                {...formRegister("name")}
               />
+              {errors.name && (
+                <p className="text-xs text-destructive">{errors.name.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
+              <Label htmlFor="email">Correo electrónico</Label>
               <Input
+                id="email"
                 type="email"
                 placeholder="correo@ejemplo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                {...formRegister("email")}
               />
+              {errors.email && (
+                <p className="text-xs text-destructive">{errors.email.message}</p>
+              )}
             </div>
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">Contraseña</label>
+              <Label htmlFor="phone">Teléfono (opcional)</Label>
               <Input
-                type="password"
-                placeholder="••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                id="phone"
+                type="tel"
+                placeholder="+56 9 1234 5678"
+                {...formRegister("phone")}
               />
+              {errors.phone && (
+                <p className="text-xs text-destructive">{errors.phone.message}</p>
+              )}
             </div>
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
-            <Button type="submit" className="w-full">
-              Registrarse
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                {...formRegister("password")}
+              />
+              {errors.password && (
+                <p className="text-xs text-destructive">{errors.password.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Repita la contraseña"
+                {...formRegister("confirmPassword")}
+              />
+              {errors.confirmPassword && (
+                <p className="text-xs text-destructive">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Registrando..." : "Registrarse"}
             </Button>
+
+            <p className="text-center text-sm text-muted-foreground">
+              ¿Ya tienes cuenta?{" "}
+              <Link to="/auth" className="text-primary underline-offset-4 hover:underline">
+                Iniciar Sesión
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>

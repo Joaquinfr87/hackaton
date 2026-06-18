@@ -63,7 +63,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             size="icon"
             onClick={() => {
               logout();
-              navigate("/login");
+              navigate("/auth");
             }}
             title="Cerrar sesión"
           >
