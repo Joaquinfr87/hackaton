@@ -19,8 +19,8 @@ import { api } from "@/lib/api";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 const reportFormSchema = z.object({
-  title: z.string().min(1, "El título es requerido"),
-  description: z.string().min(1, "La descripción es requerida"),
+  title: z.string().min(5, "El título debe tener al menos 5 caracteres"),
+  description: z.string().min(10, "Describe el incidente con más detalle (mínimo 10 caracteres)"),
   type: z.enum(
     ["fire", "power_outage", "accident", "flood", "security", "other"],
     { required_error: "Seleccione un tipo de incidente" },
@@ -28,7 +28,7 @@ const reportFormSchema = z.object({
   severity: z.enum(["low", "medium", "high", "critical"], {
     required_error: "Seleccione una severidad",
   }),
-  location: z.string().min(1, "La ubicación es requerida"),
+  location: z.string().min(3, "La ubicación debe tener al menos 3 caracteres"),
 });
 
 type ReportFormValues = z.infer<typeof reportFormSchema>;

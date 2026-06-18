@@ -5,6 +5,7 @@ import { CreateIncidentDto } from "./dto/create-incident.dto";
 import {
   IncidentEventPattern,
   IncidentCreatedEventPayload,
+  IncidentStatusChangedEventPayload,
 } from "./events/incident.events";
 
 @Injectable()
@@ -80,4 +81,41 @@ export class IncidentsService {
 
     return incident;
   }
+
+  async update(id: string, updateIncidentDto: any, userId: string) {
+    const existing = await this.findOne(id);
+    const updated = await this.prisma.incident.update({
+      where: { id },
+      data: {
+        title: updateIncidentDto.title,
+        description: updateIncidentDto.description,
+        type: updateIncidentDto.type,
+        severity: updateIncidentDto.severity,
+        location: updateIncidentDto.location,
+        status: updateIncidentDto.status,
+        assignedToId: updateIncidentDto.assignedToId || null,
+        areaId: updateIncidentDto.areaId || null,
+      },
+    });
+
+    if (updateIncidentDto.status && updateIncidentDto.status !== existing.status) {
+      this.eventEmitter.emit(IncidentEventPattern.STATUS_CHANGED, {
+        incidentId: id,
+        userId: userId,
+        oldStatus: existing.status,
+        newStatus: updateIncidentDto.status,
+        comment: "Estado modificado por el usuario",
+      } satisfies IncidentStatusChangedEventPayload);
+    }
+
+    return updated;
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.incident.delete({
+      where: { id },
+    });
+  }
 }
+

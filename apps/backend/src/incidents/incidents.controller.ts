@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -33,4 +35,15 @@ export class IncidentsController {
   findOne(@Param("id") id: string) {
     return this.incidentsService.findOne(id);
   }
+
+  @Patch(":id")
+  update(@Param("id") id: string, @Body() updateIncidentDto: any, @Request() req: any) {
+    return this.incidentsService.update(id, updateIncidentDto, req.user.id);
+  }
+
+  @Delete(":id")
+  remove(@Param("id") id: string) {
+    return this.incidentsService.remove(id);
+  }
 }
+
