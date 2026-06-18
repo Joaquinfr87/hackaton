@@ -1,101 +1,29 @@
-import { Button } from "./components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
-import { Input } from "./components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./components/ui/dialog";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AppLayout } from "@/components/AppLayout";
+import DashboardPage from "@/pages/dashboard";
+import IncidentsListPage from "@/pages/incidents/list";
+import IncidentDetailPage from "@/pages/incidents/detail";
+import ReportIncidentPage from "@/pages/incidents/report";
+import LoginPage from "@/pages/auth/login";
+import RegisterPage from "@/pages/auth/register";
+import UsersListPage from "@/pages/users/list";
 
 function App() {
   return (
-    <div className="min-h-screen bg-background p-8 space-y-8">
-      <h1 className="text-3xl font-bold text-foreground">
-        Sistema de Gestión de Emergencias
-      </h1>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Botones</h2>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="default">Default</Button>
-          <Button variant="secondary">Secondary</Button>
-          <Button variant="destructive">Destructive</Button>
-          <Button variant="outline">Outline</Button>
-          <Button variant="ghost">Ghost</Button>
-          <Button variant="link">Link</Button>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Input</h2>
-        <Input placeholder="Escribe algo..." className="max-w-sm" />
-      </div>
-
-      <Card className="max-w-md">
-        <CardHeader>
-          <CardTitle>Incidente Reciente</CardTitle>
-          <CardDescription>Último reporte registrado</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Fuga de agua en el edificio principal
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Tabla</h2>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Título</TableHead>
-              <TableHead>Estado</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell>001</TableCell>
-              <TableCell>Fuga de agua</TableCell>
-              <TableCell>Reportado</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>002</TableCell>
-              <TableCell>Corte de luz</TableCell>
-              <TableCell>En proceso</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-
-      <Dialog>
-        <DialogTrigger render={<Button variant="outline" />}>
-          Abrir Diálogo
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Detalle del Incidente</DialogTitle>
-            <DialogDescription>
-              Información completa del incidente seleccionado.
-            </DialogDescription>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Acá se mostrarán los detalles del incidente.
-          </p>
-        </DialogContent>
-      </Dialog>
-    </div>
+        <Route element={<AppLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="incidents" element={<IncidentsListPage />} />
+          <Route path="incidents/report" element={<ReportIncidentPage />} />
+          <Route path="incidents/:id" element={<IncidentDetailPage />} />
+          <Route path="users" element={<UsersListPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
