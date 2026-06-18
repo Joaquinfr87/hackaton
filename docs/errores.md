@@ -130,3 +130,55 @@ Para cada conflicto:
 | `apps/frontend/src/components/ui/tabs.tsx` | Componente Tabs de shadcn/ui (Radix) |
 | `apps/frontend/src/lib/api.ts` | Utilidad fetch para futuros módulos (incidents, etc.) |
 | `apps/frontend/src/hooks/useAuth.tsx` | AuthProvider + hook useAuth con TanStack Query |
+
+## Error 5: Módulo `@radix-ui/react-tabs` no encontrado tras merge
+
+**Error:**
+```
+src/components/ui/tabs.tsx(1,32): error TS2307: Cannot find module '@radix-ui/react-tabs' or its corresponding type declarations.
+```
+
+**Causa:**
+El componente `Tabs` de `feature/p2-auth-pages` usa `@radix-ui/react-tabs`, pero esa dependencia no se instaló en `dev` (que usa `@base-ui/react`). El merge automático agregó el archivo `tabs.tsx` pero la dependencia no estaba en `package.json`.
+
+**Solución:**
+```bash
+pnpm --filter @hackaton/frontend add @radix-ui/react-tabs
+```
+
+## Error 6: Parámetro `v` con tipo `any` implícito en login.tsx
+
+**Error:**
+```
+src/pages/auth/login.tsx(92,45): error TS7006: Parameter 'v' implicitly has an 'any' type.
+```
+
+**Causa:**
+El callback `onValueChange` del componente `Tabs` no tenía tipo explícito para su parámetro, y `tsconfig.json` tiene `strict: true` que prohíbe `any` implícitos.
+
+**Solución:**
+Agregar tipo explícito al parámetro:
+```tsx
+<Tabs value={tab} onValueChange={(v: string) => { setTab(v); setError(null); }}>
+```
+
+## Error 7: Guards de ruta redirigen a `/login` en lugar de `/auth`
+
+**Error:**
+```tsx
+// Protegían la ruta correctamente pero con redirect equivocado
+return <Navigate to="/login" replace />;
+```
+
+**Causa:**
+Tras el merge de `feature/p2-auth-pages`, las rutas de login/register se unificaron en `/auth`. Sin embargo, los guards (`ProtectedRoute`, `AdminRoute`, `ResponsableRoute`) creados en `feature/p2-auth-guard-frontend` mantenían la redirección a `/login` (ruta anterior).
+
+**Archivos afectados:**
+- `apps/frontend/src/components/auth/ProtectedRoute.tsx`
+- `apps/frontend/src/components/auth/AdminRoute.tsx`
+- `apps/frontend/src/components/auth/ResponsableRoute.tsx`
+
+**Solución:**
+Cambiar `to="/login"` por `to="/auth"` en los tres guards.
+
+**Lección:** Al unificar rutas, actualizar también todas las redirecciones que apuntaban a la ruta antigua.

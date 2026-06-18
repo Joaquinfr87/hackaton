@@ -14,7 +14,7 @@ export function AdminRoute() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   if (!user?.roles.includes("admin")) {
