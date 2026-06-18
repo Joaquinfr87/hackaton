@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import * as bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
@@ -57,10 +58,7 @@ async function main() {
 
   // 3. Create Default Admin User
   console.log("Seeding default admin user...");
-  const adminEmail = "admin@universidad.edu";
-  
-  // Bcrypt hash for "admin123" (cost factor 10)
-  const passwordHash = "$2b$10$EPYkM2hP0Uf3f9kU0e8MCO4lQyD6yOq0K1L5j8Y6tG5g5h5i5j5k5";
+  const adminEmail = "admin@universidad.edu"; // Mantenemos el correo contextual a la universidad
 
   // Check if admin already exists
   const existingAdmin = await prisma.user.findUnique({
@@ -68,6 +66,9 @@ async function main() {
   });
 
   if (!existingAdmin) {
+    // Generación de hash dinámico importado de la rama dev
+    const passwordHash = await bcrypt.hash("admin123", 10);
+
     const defaultAdmin = await prisma.user.create({
       data: {
         name: "Administrador",
@@ -81,7 +82,7 @@ async function main() {
         },
       },
     });
-    console.log("Default admin user created successfully:", defaultAdmin.email);
+    console.log("Default admin user created successfully:", defaultAdmin.email, "/ admin123");
   } else {
     console.log("Default admin user already exists.");
   }
