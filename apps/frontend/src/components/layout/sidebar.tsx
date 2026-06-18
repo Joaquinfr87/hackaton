@@ -10,13 +10,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
-  { to: "/", label: "Dashboard", icon: Home },
-  { to: "/incidents", label: "Incidentes", icon: AlertTriangle },
-  { to: "/incidents/report", label: "Reportar Incidente", icon: FileText },
-  { to: "/users", label: "Usuarios", icon: Users },
-  { to: "/stats", label: "Estadísticas", icon: BarChart3 },
+  { to: "/", label: "Dashboard", icon: Home, roles: ["admin", "responder", "user"] },
+  { to: "/incidents", label: "Incidentes", icon: AlertTriangle, roles: ["admin", "responder", "user"] },
+  { to: "/incidents/report", label: "Reportar Incidente", icon: FileText, roles: ["admin", "responder", "user"] },
+  { to: "/users", label: "Usuarios", icon: Users, roles: ["admin"] },
+  { to: "/stats", label: "Estadísticas", icon: BarChart3, roles: ["admin"] },
 ];
 
 interface SidebarProps {
@@ -25,6 +26,10 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const { user } = useAuth();
+  const filteredItems = navItems.filter(
+    (item) => user?.roles.some((r) => item.roles.includes(r))
+  );
   return (
     <>
       {isOpen && (
@@ -56,7 +61,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         <nav className="flex-1 space-y-1 p-4">
-          {navItems.map((item) => (
+          {filteredItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
