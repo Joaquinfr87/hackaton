@@ -7,18 +7,115 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Incident {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  type        String
-  severity    String
-  status      String   @default("reported")
-  location    String
-  reportedBy  String
-  assignedTo  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  phone        String?
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
+  roles         UserRole[]
+  incidents     Incident[]     @relation("reportedBy")
+  assignments   Incident[]     @relation("assignedTo")
+  auditLogs     AuditLog[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  users UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId String @map("user_id")
+  roleId String @map("role_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([userId])
+  @@map("user_roles")
+}
+
+model CampusArea {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  location    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  incidents Incident[]
+
+  @@map("campus_areas")
+}
+
+model Incident {
+  id           String   @id @default(uuid())
+  title        String
+  description  String
+  type         String
+  severity     String
+  status       String   @default("reported")
+  location     String
+  reportedById String   @map("reported_by_id")
+  assignedToId String?  @map("assigned_to_id")
+  areaId       String?  @map("area_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  reportedBy User        @relation("reportedBy", fields: [reportedById], references: [id])
+  assignedTo User?       @relation("assignedTo", fields: [assignedToId], references: [id])
+  area       CampusArea? @relation(fields: [areaId], references: [id])
+  auditLogs  AuditLog[]
+
+  @@index([status])
+  @@index([type])
+  @@index([severity])
+  @@index([reportedById])
+  @@index([assignedToId])
+  @@index([createdAt])
   @@map("incidents")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  incidentId String   @map("incident_id")
+  userId     String   @map("user_id")
+  action     String
+  oldStatus  String?  @map("old_status")
+  newStatus  String?  @map("new_status")
+  comment    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@index([incidentId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
 }
