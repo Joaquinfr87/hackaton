@@ -4,6 +4,7 @@ import { ThrottlerModule } from "@nestjs/throttler";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuditModule } from "./audit/audit.module";
+import { IncidentsModule } from "./incidents/incidents.module";
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AuditModule } from "./audit/audit.module";
     EventEmitterModule.forRoot(),
     PrismaModule,
     AuditModule,
+    IncidentsModule,
   ],
 })
 export class AppModule {}
