@@ -7,8 +7,9 @@
     "lint": "turbo run lint",
     "check-types": "turbo run check-types",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "db:up": "docker compose up -d postgres",
+    "db:up": "docker compose up -d postgres adminer",
     "db:down": "docker compose down",
+    "db:adminer": "docker compose up -d adminer",
     "db:generate": "turbo run prisma:generate",
     "db:migrate": "pnpm --filter @hackaton/backend prisma:migrate",
     "db:studio": "pnpm --filter @hackaton/backend prisma:studio"
