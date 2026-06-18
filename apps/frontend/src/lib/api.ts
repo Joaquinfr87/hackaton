@@ -1,7 +1,7 @@
-const API_BASE = "http://localhost:3000";
+const API_BASE = "http://localhost:3000/api";
 
 export async function api<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem("auth_token");
 
   const res = await fetch(`${API_BASE}${path}`, {
     headers: {
@@ -19,3 +19,4 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
 
   return res.json();
 }
+
